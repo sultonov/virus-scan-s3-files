@@ -5,7 +5,7 @@ export default {
         timeout: Number(process.env.APP_SERVER_TIMEOUT || 60000),
     },
     allowedIPs: (process.env.ALLOWED_IPS || "").split(","),
-    clamAVPath: "clamdscan",
+    clamAVPath: process.env.CLAMAV_PATH || "clamdscan",
     statuses: {
         clean: "CLEAN",
         infected: "INFECTED",
