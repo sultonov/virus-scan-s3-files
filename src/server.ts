@@ -1,5 +1,5 @@
-import {default as Router} from "./router";
-import {default as config} from "./config";
+import { default as Router } from "./router";
+import { default as config } from "./config";
 import express from "express";
 
 const app = express();

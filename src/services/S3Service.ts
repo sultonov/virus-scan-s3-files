@@ -1,9 +1,12 @@
-import { default as config } from "../config";
 import * as AWS from "aws-sdk";
-import {S3} from "aws-sdk";
 import * as fs from "fs";
-import path from "path";
+import * as stream from "stream";
+import * as util from "util";
+import { CheckLimitStream } from "../helpers/CheckLimitStream";
+import { S3 } from "aws-sdk";
+import { default as config } from "../config";
 import os from "os";
+import path from "path";
 
 export class S3Service {
     private readonly s3: S3;
@@ -27,7 +30,7 @@ export class S3Service {
             await this.s3.headObject(params).promise();
 
             return true;
-        } catch (error: any) {
+        } catch (error) {
             return false;
         }
     }
@@ -39,15 +42,28 @@ export class S3Service {
         };
         const filePath = `${os.tmpdir()}/${path.basename(key)}`;
 
-        await this.s3.getObject(params, (err, data) => {
-            if (data.Body){
-                fs.writeFileSync(filePath, data.Body.toString());
-                console.log(`${filePath} has been created!`);
-            }
-            else {
-                console.error(err);
-            }
-        }).promise();
+        try {
+            console.log(`Started to read input file ${key}`);
+            const readable = this.s3.getObject(params).createReadStream();
+            let readDataSize = 0;
+            readable.on("data", (chunk) => {
+                readDataSize += chunk.length;
+            });
+
+            const writable = fs.createWriteStream(filePath);
+
+            const pipeline = util.promisify(stream.pipeline);
+            await pipeline(
+                readable,
+                new CheckLimitStream(config.maxInputBytes),
+                writable,
+            );
+
+            console.log(`File created in FS: ${filePath} size ${readDataSize}`);
+        } catch (err) {
+            console.error(err);
+            throw err;
+        }
 
         return filePath;
     }

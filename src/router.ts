@@ -1,15 +1,13 @@
-import {Request, Response, Router} from "express";
-import {default as config} from "./config";
-import {default as hostFilter} from "./middlewares/hostFilter";
-import * as child from 'child_process';
-import * as AWS from 'aws-sdk';
-import {S3Service} from "./services/S3Service";
+import * as child from "child_process";
+import { Request, Response, Router } from "express";
+import { S3Service } from "./services/S3Service";
+import { default as config } from "./config";
+import { default as hostFilter } from "./middlewares/hostFilter";
 
 const router = Router();
 
 router.all("*", hostFilter, async (req: Request, res: Response) => {
-    const {bucket, key} = req.body;
-    console.log(bucket, key);
+    const { bucket, key } = req.body;
     const service = new S3Service();
 
     try {
@@ -29,17 +27,17 @@ router.all("*", hostFilter, async (req: Request, res: Response) => {
 
         const execString = `${config.clamAVPath} -v --stdout ${filePath}`;
         console.log(`Executing command ${execString}`);
-        await child.exec(execString);
+        child.execSync(execString, { stdio: "inherit" });
         console.log(`Command ${execString} executed successfully`);
 
         res.status(200).send({
             status: config.statuses.clean,
             code: 0,
         });
-    } catch (err: any) {
-        console.log('ClamAV file check error: ', err);
+    } catch (err) {
+        console.log("ClamAV file check error: ", err);
         // Error status 1 means that the file is infected.
-        if (err.status === 1) {
+        if ((err as child.ExecException).code === 1) {
             res.status(200).send({
                 status: config.statuses.infected,
                 code: 0
@@ -47,7 +45,7 @@ router.all("*", hostFilter, async (req: Request, res: Response) => {
         } else {
             res.status(200).send({
                 status: config.statuses.error,
-                message: err.toString(),
+                message: (err as child.ExecException).toString(),
                 code: 0
             });
         }

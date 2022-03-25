@@ -15,5 +15,6 @@ export default {
         accessKey: process.env.AWS_ACCESS_KEY,
         secretKey: process.env.AWS_SECRET_KEY,
         region: process.env.AWS_REGION // ex) us-west-2
-    }
+    },
+    maxInputBytes: 100 * 1024 * 1024 // 100 MB
 };
