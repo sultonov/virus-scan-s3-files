@@ -40,7 +40,7 @@ export class S3Service {
             Bucket: bucket,
             Key: key
         };
-        const filePath = `${os.tmpdir()}/${path.basename(key)}`;
+        const filePath = `${os.tmpdir()}/${(Math.random() + 1).toString(36)}${path.basename(key)}`;
 
         try {
             console.log(`Started to read input file ${key}`);
