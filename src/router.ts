@@ -37,7 +37,7 @@ router.all("*", hostFilter, async (req: Request, res: Response) => {
     } catch (err) {
         console.log("ClamAV file check error: ", err);
         // Error status 1 means that the file is infected.
-        if ((err as child.ExecException).code === 1) {
+        if (err.status === 1) {
             res.status(200).send({
                 status: config.statuses.infected,
                 code: 0
